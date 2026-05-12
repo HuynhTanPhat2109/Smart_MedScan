@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "22781581657",
+    "project_id": "smart-medscan",
+    "storage_bucket": "smart-medscan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:22781581657:android:82d9ceb03d94d86262d448",
+        "android_client_info": {
+          "package_name": "ntu.tanphat.smart_medscan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFpYWV3kPkxz8N5jUZPifP3nwapWJkh3w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

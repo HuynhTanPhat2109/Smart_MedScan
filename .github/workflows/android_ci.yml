@@ -1,0 +1,29 @@
+name: Android CI/CD
+
+on:
+  push:
+    branches: [ "main" ] # Chạy mỗi khi bạn push code lên nhánh chính
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # Chạy trên máy chủ ảo của GitHub
+
+    steps:
+      - uses: actions/checkout@v4 # Lấy code từ GitHub về máy chủ ảo
+
+      - name: set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        working-directory: ./Smart_MedScan
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        working-directory: ./Smart_MedScan
+        run: ./gradlew build # Ra lệnh cho robot tự build thử App
