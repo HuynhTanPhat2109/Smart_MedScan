@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval"> <!-- Hình tròn hoàn hảo -->
+    <gradient
+        android:angle="270"
+        android:startColor="#5281E9"
+        android:centerColor="#7DD3FC"
+        android:endColor="#C3D8ED"
+        android:type="linear" />
+    <size
+        android:width="64dp"
+        android:height="64dp" />
+</shape>

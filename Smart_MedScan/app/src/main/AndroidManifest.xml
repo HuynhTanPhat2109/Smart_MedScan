@@ -13,6 +13,10 @@
         android:theme="@style/Theme.Smart_MedScan">
         <activity
             android:name=".ui.activities.RegisterActivity"
+            android:exported="false">
+        </activity>
+        <activity
+            android:name=".ui.activities.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,9 +24,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ui.activities.LoginActivity"
-            android:exported="false" />
         <activity
             android:name=".ui.activities.MainActivity"
             android:exported="false">

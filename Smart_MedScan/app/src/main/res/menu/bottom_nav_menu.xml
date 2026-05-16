@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/homeicon"
+        android:title="Trang chủ" />
+
+    <item
+        android:id="@+id/nav_time"
+        android:icon="@drawable/timeicon"
+        android:title="Lịch hẹn" />
+
+    <item
+        android:id="@+id/placeholder"
+        android:title="" />
+
+    <item
+        android:id="@+id/nav_records"
+        android:icon="@drawable/recordicon"
+        android:title="Bệnh án" />
+
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/profileicon"
+        android:title="Cá nhân" />
+</menu>

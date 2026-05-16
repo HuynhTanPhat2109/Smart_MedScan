@@ -1,19 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:background="#F8FAFC">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <!-- Nội dung chính (Fragments sẽ thay đổi ở đây) -->
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="92dp" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- Thanh điều hướng Bottom Bar -->
+    <com.google.android.material.bottomappbar.BottomAppBar
+        android:id="@+id/bottomAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="92dp"
+        android:layout_gravity="bottom"
+        android:backgroundTint="#FFFFFF"
+        app:fabAlignmentMode="center"
+        app:fabCradleMargin="12dp"
+        app:fabCradleRoundedCornerRadius="28dp"
+        app:fabCradleVerticalOffset="12dp">
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNavigationView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            app:elevation="0dp"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_nav_menu"
+            app:itemIconTint="#64748B"
+            app:itemTextColor="#64748B"
+            app:itemActiveIndicatorStyle="@style/App.CustomIndicator" />
+    </com.google.android.material.bottomappbar.BottomAppBar>
+
+    <FrameLayout
+        android:id="@+id/frameLayout"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_scan_gradient"
+        android:elevation="8dp"
+        android:padding="4dp"
+        android:translationY="-8dp"
+        app:layout_anchor="@id/bottomAppBar"
+        app:layout_anchorGravity="center">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabScan"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:backgroundTint="@android:color/transparent"
+            android:src="@drawable/scanicon"
+            android:stateListAnimator="@null"
+            app:backgroundTint="@android:color/transparent"
+            app:borderWidth="0dp"
+            app:elevation="0dp"
+            app:hoveredFocusedTranslationZ="0dp"
+            app:maxImageSize="35dp"
+            app:pressedTranslationZ="0dp"
+            app:rippleColor="@android:color/transparent"
+            app:tint="#104DE0" />
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
