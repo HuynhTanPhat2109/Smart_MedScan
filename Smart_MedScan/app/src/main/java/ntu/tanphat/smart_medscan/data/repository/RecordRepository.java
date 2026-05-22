@@ -45,50 +45,47 @@ public class RecordRepository {
         db.collection("departments").document(deptId).update("count", FieldValue.increment(change));
     }
 
-    // Tìm kiếm Khoa
-    public Task<QuerySnapshot> searchDepartments(String text) {
+    public Task<QuerySnapshot> searchDepartments(String searchText) {
         return db.collection("departments")
                 .orderBy("name")
-                .startAt(text)
-                .endAt(text + "\uf8ff")
+                .startAt(searchText)
+                .endAt(searchText + "\uf8ff")
                 .get();
     }
 
-    // Tìm kiếm Tầng trong Khoa đã chọn
-    public Task<QuerySnapshot> searchFloors(String text, String deptId) {
+    public Task<QuerySnapshot> searchFloors(String searchText, String deptId) {
         return db.collection("floors")
                 .whereEqualTo("departmentId", deptId)
                 .orderBy("name")
-                .startAt(text)
-                .endAt(text + "\uf8ff")
+                .startAt(searchText)
+                .endAt(searchText + "\uf8ff")
                 .get();
     }
 
-    // Tìm kiếm Phòng trong Tầng đã chọn
-    public Task<QuerySnapshot> searchRooms(String text, String floorId) {
+    public Task<QuerySnapshot> searchRooms(String searchText, String floorId) {
         return db.collection("rooms")
                 .whereEqualTo("floorId", floorId)
                 .orderBy("name")
-                .startAt(text)
-                .endAt(text + "\uf8ff")
+                .startAt(searchText)
+                .endAt(searchText + "\uf8ff")
                 .get();
     }
 
-    // Tìm kiếm Bệnh nhân kèm lọc trạng thái
     public Task<QuerySnapshot> searchPatients(String searchText, String roomId, String status) {
         Query query = db.collection("patients");
-
         if (roomId != null) {
             query = query.whereEqualTo("roomId", roomId);
         }
-
         if (status != null && !status.equals("Tất cả")) {
             query = query.whereEqualTo("status", status);
         }
-
         return query.orderBy("name")
                 .startAt(searchText)
                 .endAt(searchText + "\uf8ff")
                 .get();
+    }
+
+    public Task<QuerySnapshot> getMedicineByName(String name) {
+        return db.collection("medicines").whereEqualTo("name", name).limit(1).get();
     }
 }

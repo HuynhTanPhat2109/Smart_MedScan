@@ -30,6 +30,8 @@ public class HomeFragment extends Fragment {
     private TaskAdapter adapter;
     private List<MedicalTask> priorityTasks;
     private TextView tvPatientCount, tvTaskCount;
+
+    private View cvScan, cvRecords, cvSchedule, cvProfile;
     public HomeFragment() {
         // Required empty public constructor
     }
@@ -56,6 +58,8 @@ public class HomeFragment extends Fragment {
         setupRecyclerView();
         loadDummyData();
 
+        setupQuickActions();
+
         return view;
     }
     private void initViews(View view) {
@@ -64,6 +68,11 @@ public class HomeFragment extends Fragment {
         rvTasks = view.findViewById(R.id.rvPriorityTasks);
         tvPatientCount = view.findViewById(R.id.tvPatientCount);
         tvTaskCount = view.findViewById(R.id.tvTaskCount);
+
+        cvScan = view.findViewById(R.id.cvScan);
+        cvRecords = view.findViewById(R.id.cvRecords);
+        cvSchedule = view.findViewById(R.id.cvSchedule);
+        cvProfile = view.findViewById(R.id.cvProfile);
     }
     private void setupRecyclerView() {
         priorityTasks = new ArrayList<>();
@@ -91,7 +100,7 @@ public class HomeFragment extends Fragment {
     private void updateGreeting() {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
         String greeting;
-        if (hour >= 0 && hour < 12) {
+        if (hour >= 5 && hour < 12) {
             greeting = "Chào buổi sáng,";
         } else if (hour >= 12 && hour < 18) {
             greeting = "Chào buổi chiều,";
@@ -107,5 +116,18 @@ public class HomeFragment extends Fragment {
     private void loadUserData() {
         // Giả lập dữ liệu, sau này Phát sẽ gọi FirebaseUser ở đây
         tvUserName.setText("Điều dưỡng Phát");
+    }
+    private void setupQuickActions() {
+        // Lưu ý: Các ID R.id.nav_... phải khớp hoàn toàn với ID trong file menu_bottom_nav.xml
+        cvScan.setOnClickListener(v -> triggerTabChange(R.id.placeholder));
+        cvRecords.setOnClickListener(v -> triggerTabChange(R.id.nav_records));
+        cvSchedule.setOnClickListener(v -> triggerTabChange(R.id.nav_time)); // MainActivity của bạn dùng nav_time
+        cvProfile.setOnClickListener(v -> triggerTabChange(R.id.nav_profile));
+    }
+
+    private void triggerTabChange(int menuId) {
+        if (getActivity() instanceof ntu.tanphat.smart_medscan.ui.activities.MainActivity) {
+            ((ntu.tanphat.smart_medscan.ui.activities.MainActivity) getActivity()).selectBottomNavTab(menuId);
+        }
     }
 }

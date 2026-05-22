@@ -105,4 +105,13 @@ public class MainActivity extends AppCompatActivity {
         transaction.replace(R.id.fragment_container, fragment);
         transaction.commit();
     }
+    public void selectBottomNavTab(int itemId) {
+        // Nếu là ID của nút Quét (vì bạn dùng FAB riêng, không nằm trong BottomNav)
+        if (itemId == R.id.placeholder) {
+            fabScan.performClick(); // Tự động "nhấn" hộ nút FAB để chạy logic quét
+        } else {
+            // Đối với các Tab thông thường (Home, Lịch, Bệnh án, Cá nhân)
+            bottomNavigationView.setSelectedItemId(itemId);
+        }
+    }
 }

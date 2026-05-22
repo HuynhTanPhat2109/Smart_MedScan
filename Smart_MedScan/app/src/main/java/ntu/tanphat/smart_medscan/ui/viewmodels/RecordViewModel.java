@@ -12,6 +12,7 @@ import java.util.Map;
 
 import ntu.tanphat.smart_medscan.data.models.Department;
 import ntu.tanphat.smart_medscan.data.models.Floor;
+import ntu.tanphat.smart_medscan.data.models.Medicine;
 import ntu.tanphat.smart_medscan.data.models.PatientRecord;
 import ntu.tanphat.smart_medscan.data.models.Room;
 import ntu.tanphat.smart_medscan.data.repository.RecordRepository;
@@ -21,6 +22,10 @@ public class RecordViewModel extends ViewModel {
     private final MutableLiveData<List<Object>> displayList = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
+    private final MutableLiveData<Medicine> scanResultLiveData = new MutableLiveData<>();
+    private final MutableLiveData<String> allergyWarningLiveData = new MutableLiveData<>();
+    
+    private PatientRecord currentPatient;
 
     public RecordViewModel() {
         repository = new RecordRepository();
@@ -29,6 +34,12 @@ public class RecordViewModel extends ViewModel {
     public LiveData<List<Object>> getDisplayList() { return displayList; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<String> getErrorMessage() { return errorMessage; }
+    public LiveData<Medicine> getScanResultLiveData() { return scanResultLiveData; }
+    public LiveData<String> getAllergyWarningLiveData() { return allergyWarningLiveData; }
+
+    public void setCurrentPatient(PatientRecord patient) {
+        this.currentPatient = patient;
+    }
 
     public void fetchDepartments() {
         isLoading.setValue(true);
@@ -164,6 +175,33 @@ public class RecordViewModel extends ViewModel {
             errorMessage.setValue(e.getMessage());
             isLoading.setValue(false);
         });
+    }
+
+    public void checkMedicine(String medicineName) {
+        repository.getMedicineByName(medicineName).addOnSuccessListener(snapshots -> {
+            if (!snapshots.isEmpty()) {
+                Medicine medicine = snapshots.getDocuments().get(0).toObject(Medicine.class);
+                if (medicine != null) {
+                    scanResultLiveData.setValue(medicine);
+                    checkAllergy(medicine);
+                }
+            } else {
+                errorMessage.setValue("Không tìm thấy thông tin thuốc: " + medicineName);
+            }
+        });
+    }
+
+    private void checkAllergy(Medicine medicine) {
+        if (currentPatient != null && currentPatient.getAllergy() != null) {
+            String patientAllergy = currentPatient.getAllergy().toLowerCase();
+            String medicineComponents = medicine.getComponents().toLowerCase();
+            
+            if (patientAllergy.contains(medicineComponents) || medicineComponents.contains(patientAllergy)) {
+                allergyWarningLiveData.setValue("CẢNH BÁO: Thuốc này chứa thành phần gây dị ứng cho bệnh nhân!");
+            } else {
+                allergyWarningLiveData.setValue(null);
+            }
+        }
     }
 
     public void addRecord(String collection, Map<String, Object> data, Runnable onSuccess) {

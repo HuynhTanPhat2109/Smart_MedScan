@@ -5,11 +5,7 @@ plugins {
 
 android {
     namespace = "ntu.tanphat.smart_medscan"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+                compileSdk = 36
 
     defaultConfig {
         applicationId = "ntu.tanphat.smart_medscan"
@@ -49,6 +45,13 @@ dependencies {
     implementation(libs.mlkit.text)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
+    
+    // CameraX
+    implementation(libs.camera.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

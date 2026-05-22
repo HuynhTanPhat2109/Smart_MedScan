@@ -18,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -40,6 +41,7 @@ import ntu.tanphat.smart_medscan.data.models.Floor;
 import ntu.tanphat.smart_medscan.data.models.PatientRecord;
 import ntu.tanphat.smart_medscan.data.models.Room;
 import ntu.tanphat.smart_medscan.ui.viewmodels.RecordViewModel;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 public class RecordFragment extends Fragment {
 
@@ -61,6 +63,10 @@ public class RecordFragment extends Fragment {
 
     public enum ViewState { DEPARTMENTS, FLOORS, ROOMS, PATIENTS }
     private ViewState currentState = ViewState.DEPARTMENTS;
+    private View loadingContainer;
+
+    private TextView tvTotalRecordCount, tvTotalRecordLabel;
+    private TextView tvRecordStateLabel, tvCurrentLocation, tvCurrentLocationSub, tvCurrentFilter;
 
     public interface OnRecordClickListener {
         void onItemClick(Object item);
@@ -71,7 +77,7 @@ public class RecordFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_record, container, false);
 
-        viewModel = new ViewModelProvider(this).get(RecordViewModel.class);
+        viewModel = new ViewModelProvider(requireActivity()).get(RecordViewModel.class);
 
         rvRecords = view.findViewById(R.id.rvMedicalRecords);
         etSearch = view.findViewById(R.id.etSearchRecord);
@@ -80,6 +86,15 @@ public class RecordFragment extends Fragment {
         btnBack = view.findViewById(R.id.btnBack);
         tvHeaderTitle = view.findViewById(R.id.tvHeaderTitle);
         btnFilter = view.findViewById(R.id.btnFilter);
+
+        tvTotalRecordCount = view.findViewById(R.id.tvTotalRecordCount);
+        tvTotalRecordLabel = view.findViewById(R.id.tvTotalRecordLabel);
+        tvRecordStateLabel = view.findViewById(R.id.tvRecordStateLabel);
+        tvCurrentLocation = view.findViewById(R.id.tvCurrentLocation);
+        tvCurrentLocationSub = view.findViewById(R.id.tvCurrentLocationSub);
+        tvCurrentFilter = view.findViewById(R.id.tvCurrentFilter);
+
+        loadingContainer = view.findViewById(R.id.loadingContainer);
 
         setupRecyclerView();
         setupSearch();
@@ -106,6 +121,10 @@ public class RecordFragment extends Fragment {
                     Room r = (Room) item;
                     selectedRoomId = r.getId(); selectedRoomName = r.getName();
                     updateViewState(ViewState.PATIENTS);
+                } else if (item instanceof PatientRecord) {
+                    PatientRecord p = (PatientRecord) item;
+                    viewModel.setCurrentPatient(p);
+                    showPatientDetailBottomSheet(p);
                 }
             }
 
@@ -123,15 +142,73 @@ public class RecordFragment extends Fragment {
             displayList.clear();
             displayList.addAll(items);
             adapter.notifyDataSetChanged();
+            updateOverviewCard();
         });
 
         viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
-            if (pbLoading != null) pbLoading.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            if (loadingContainer != null) {
+                loadingContainer.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            }
         });
 
         viewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
             if (error != null) Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void showPatientDetailBottomSheet(PatientRecord patient) {
+        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        View view = getLayoutInflater().inflate(R.layout.dialog_patient_detail, null);
+        dialog.setContentView(view);
+
+        TextView tvInitial = view.findViewById(R.id.tvDetailInitial);
+        TextView tvName = view.findViewById(R.id.tvDetailName);
+        TextView tvStatus = view.findViewById(R.id.tvDetailStatus);
+        TextView tvAge = view.findViewById(R.id.tvDetailAge);
+        TextView tvBed = view.findViewById(R.id.tvDetailBed);
+        TextView tvDiagnosis = view.findViewById(R.id.tvDetailDiagnosis);
+        TextView tvAllergy = view.findViewById(R.id.tvDetailAllergy);
+        TextView tvRoom = view.findViewById(R.id.tvDetailRoom);
+        MaterialButton btnEdit = view.findViewById(R.id.btnEditPatientDetail);
+        MaterialButton btnClose = view.findViewById(R.id.btnClosePatientDetail);
+
+        String name = patient.getName() == null ? "Bệnh nhân" : patient.getName();
+        String initial = !name.trim().isEmpty() ? name.trim().substring(0, 1).toUpperCase() : "P";
+
+        tvInitial.setText(initial);
+        tvName.setText(name);
+        tvStatus.setText(patient.getStatus() == null || patient.getStatus().isEmpty()
+                ? "Chưa cập nhật"
+                : patient.getStatus());
+
+        tvAge.setText(isEmpty(patient.getAge()) ? "Chưa cập nhật" : patient.getAge() + " tuổi");
+        tvBed.setText(isEmpty(patient.getBedNumber()) ? "Chưa cập nhật" : "Giường " + patient.getBedNumber());
+        tvDiagnosis.setText(isEmpty(patient.getDiagnosis()) ? "Chưa có chẩn đoán" : patient.getDiagnosis());
+        tvAllergy.setText(isEmpty(patient.getAllergy()) ? "Không ghi nhận dị ứng" : patient.getAllergy());
+        tvRoom.setText(selectedRoomName == null ? "Chưa chọn phòng" : selectedRoomName);
+
+        int statusColor = ContextCompat.getColor(requireContext(), R.color.success);
+
+        if ("Cấp cứu".equalsIgnoreCase(patient.getStatus())) {
+            statusColor = ContextCompat.getColor(requireContext(), R.color.danger);
+        } else if ("Theo dõi".equalsIgnoreCase(patient.getStatus())) {
+            statusColor = ContextCompat.getColor(requireContext(), R.color.warning);
+        }
+
+        tvStatus.setTextColor(statusColor);
+
+        btnEdit.setOnClickListener(v -> {
+            dialog.dismiss();
+            showModalDialog(patient);
+        });
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private boolean isEmpty(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private void showPopupMenu(View view, Object item) {
@@ -160,7 +237,6 @@ public class RecordFragment extends Fragment {
     private void triggerSearch() {
         String query = etSearch.getText().toString().trim();
 
-        // Search contextual logic
         switch (currentState) {
             case DEPARTMENTS:
                 if (query.isEmpty()) viewModel.fetchDepartments();
@@ -175,7 +251,6 @@ public class RecordFragment extends Fragment {
                 else viewModel.searchRooms(query, selectedFloorId);
                 break;
             case PATIENTS:
-                // Search with status filter for patients
                 viewModel.searchPatients(query, selectedRoomId, currentStatusFilter);
                 break;
         }
@@ -194,6 +269,9 @@ public class RecordFragment extends Fragment {
             popup.setOnMenuItemClickListener(item -> {
                 if (item.getTitle() != null) {
                     currentStatusFilter = item.getTitle().toString();
+                    if (tvCurrentFilter != null) {
+                        tvCurrentFilter.setText(currentStatusFilter);
+                    }
                     triggerSearch();
                 }
                 return true;
@@ -212,18 +290,54 @@ public class RecordFragment extends Fragment {
 
     private void updateViewState(ViewState newState) {
         this.currentState = newState;
-        // Reset search and filter when moving between levels
-        etSearch.setText("");
+        if (etSearch != null) etSearch.setText("");
         currentStatusFilter = "Tất cả";
         updateUIForState();
         fetchData();
+    }
+
+    private void updateOverviewCard() {
+        if (tvTotalRecordCount == null) return;
+
+        int total = displayList.size();
+        tvTotalRecordCount.setText(String.valueOf(total));
+        tvCurrentFilter.setText(currentStatusFilter);
+
+        switch (currentState) {
+            case DEPARTMENTS:
+                tvRecordStateLabel.setText("Đang xem khoa");
+                tvTotalRecordLabel.setText("khoa hiện có");
+                tvCurrentLocation.setText("Toàn bệnh viện");
+                tvCurrentLocationSub.setText("Chọn khoa để xem tầng");
+                break;
+
+            case FLOORS:
+                tvRecordStateLabel.setText("Đang xem tầng");
+                tvTotalRecordLabel.setText("tầng trong khoa");
+                tvCurrentLocation.setText(selectedDeptName == null ? "Khoa" : selectedDeptName);
+                tvCurrentLocationSub.setText("Chọn tầng để xem phòng");
+                break;
+
+            case ROOMS:
+                tvRecordStateLabel.setText("Đang xem phòng");
+                tvTotalRecordLabel.setText("phòng trong tầng");
+                tvCurrentLocation.setText(selectedFloorName == null ? "Tầng" : selectedFloorName);
+                tvCurrentLocationSub.setText(selectedDeptName == null ? "Chọn phòng để xem bệnh nhân" : selectedDeptName);
+                break;
+
+            case PATIENTS:
+                tvRecordStateLabel.setText("Đang xem bệnh nhân");
+                tvTotalRecordLabel.setText("bệnh nhân trong phòng");
+                tvCurrentLocation.setText(selectedRoomName == null ? "Phòng" : selectedRoomName);
+                tvCurrentLocationSub.setText("Lọc theo trạng thái bệnh án");
+                break;
+        }
     }
 
     private void updateUIForState() {
         if (btnBack != null) btnBack.setVisibility(currentState == ViewState.DEPARTMENTS ? View.GONE : View.VISIBLE);
         if (fabAdd != null) fabAdd.setText(String.format("Thêm %s", getEntityName()));
         
-        // Show filter button ONLY in patients view
         if (btnFilter != null) {
             btnFilter.setVisibility(currentState == ViewState.PATIENTS ? View.VISIBLE : View.GONE);
         }
@@ -244,10 +358,11 @@ public class RecordFragment extends Fragment {
                     break;
                 case PATIENTS: 
                     tvHeaderTitle.setText(selectedRoomName); 
-                    etSearch.setHint("Tìm kiếm bệnh nhân...");
+                    etSearch.setHint("Tìm bệnh nhân...");
                     break;
             }
         }
+        updateOverviewCard();
     }
 
     private void fetchData() {
@@ -292,40 +407,38 @@ public class RecordFragment extends Fragment {
         if (tvTitle != null) tvTitle.setText(String.format("%s %s", item == null ? "Thêm mới" : "Sửa", getEntityName()));
         
         if (item != null) {
-            if (etName != null) etName.setText(getNameFromItem(item));
+            etName.setText(getNameFromItem(item));
             if (item instanceof PatientRecord) {
                 PatientRecord p = (PatientRecord) item;
-                if (etAge != null) etAge.setText(p.getAge());
-                if (etBed != null) etBed.setText(p.getBedNumber());
-                if (etDiagnosis != null) etDiagnosis.setText(p.getDiagnosis());
-                if (etAllergy != null) etAllergy.setText(p.getAllergy());
+                etAge.setText(p.getAge());
+                etBed.setText(p.getBedNumber());
+                etDiagnosis.setText(p.getDiagnosis());
+                etAllergy.setText(p.getAllergy());
             }
         }
 
-        if (btnCancel != null) btnCancel.setOnClickListener(v -> dialog.dismiss());
-        if (btnSave != null) {
-            btnSave.setOnClickListener(v -> {
-                String name = (etName != null) ? etName.getText().toString().trim() : "";
-                if (name.isEmpty()) {
-                    Toast.makeText(getContext(), "Không được để trống tên!", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnSave.setOnClickListener(v -> {
+            String name = etName.getText().toString().trim();
+            if (name.isEmpty()) {
+                Toast.makeText(getContext(), "Không được để trống tên!", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                Map<String, Object> data = new HashMap<>();
-                data.put("name", name);
+            Map<String, Object> data = new HashMap<>();
+            data.put("name", name);
 
-                if (currentState == ViewState.PATIENTS) {
-                    if (etAge != null) data.put("age", etAge.getText().toString().trim());
-                    if (etBed != null) data.put("bedNumber", etBed.getText().toString().trim());
-                    if (etDiagnosis != null) data.put("diagnosis", etDiagnosis.getText().toString().trim());
-                    if (etAllergy != null) data.put("allergy", etAllergy.getText().toString().trim());
-                    if (spnStatus != null) data.put("status", spnStatus.getSelectedItem().toString());
-                }
+            if (currentState == ViewState.PATIENTS) {
+                data.put("age", etAge.getText().toString().trim());
+                data.put("bedNumber", etBed.getText().toString().trim());
+                data.put("diagnosis", etDiagnosis.getText().toString().trim());
+                data.put("allergy", etAllergy.getText().toString().trim());
+                data.put("status", spnStatus.getSelectedItem().toString());
+            }
 
-                saveData(item, data);
-                dialog.dismiss();
-            });
-        }
+            saveData(item, data);
+            dialog.dismiss();
+        });
         dialog.show();
     }
 
@@ -418,33 +531,60 @@ public class RecordFragment extends Fragment {
                 if (item instanceof Department) {
                     Department d = (Department) item;
                     h.title.setText(d.getName());
-                    h.sub.setText(String.format("%s BN", d.getCount()));
-                    h.icon.setImageResource(R.drawable.khoaicon);
+                    h.sub.setText(String.format("%d bệnh nhân", d.getCount()));
+                    h.icon.setImageResource(R.drawable.iconkhoa);
                 } else if (item instanceof Floor) {
                     Floor f = (Floor) item;
-                    h.title.setText(f.getName()); h.sub.setText("Nhấn để xem phòng");
-                    h.icon.setImageResource(android.R.drawable.ic_menu_sort_by_size);
+                    h.title.setText(f.getName()); h.sub.setText("Nhấn để xem các phòng");
+                    h.icon.setImageResource(R.drawable.flooricon);
                 } else if (item instanceof Room) {
                     Room r = (Room) item;
                     h.title.setText(r.getName()); h.sub.setText("Nhấn để xem bệnh nhân");
-                    h.icon.setImageResource(android.R.drawable.ic_menu_myplaces);
+                    h.icon.setImageResource(R.drawable.roomicon);
                 }
             } else if (holder instanceof PatientViewHolder) {
                 PatientViewHolder h = (PatientViewHolder) holder;
                 PatientRecord p = (PatientRecord) item;
-                h.name.setText(p.getName()); h.bed.setText(String.format("Giường %s", p.getBedNumber()));
-                h.diag.setText(p.getDiagnosis()); 
-                h.age.setText(String.format("%s tuổi", p.getAge()));
-                
-                String init = (p.getName() != null && !p.getName().isEmpty()) ? p.getName().substring(0, 1).toUpperCase() : "P";
+
+                h.name.setText(p.getName());
+                h.diag.setText(p.getDiagnosis() == null || p.getDiagnosis().isEmpty()
+                        ? "Chưa có chẩn đoán"
+                        : p.getDiagnosis());
+
+                h.bed.setText("Giường " + (p.getBedNumber() == null || p.getBedNumber().isEmpty()
+                        ? "--"
+                        : p.getBedNumber()));
+
+                h.age.setText((p.getAge() == null || p.getAge().isEmpty()
+                        ? "--"
+                        : p.getAge()) + " tuổi");
+
+                h.statusChip.setText(p.getStatus() == null || p.getStatus().isEmpty()
+                        ? "Chưa rõ"
+                        : p.getStatus());
+
+                String nameStr = p.getName();
+                String init = (nameStr != null && !nameStr.isEmpty())
+                        ? nameStr.substring(0, 1).toUpperCase()
+                        : "P";
                 h.initial.setText(init);
-                
-                h.allergyBadge.setVisibility(p.getAllergy() != null && !p.getAllergy().isEmpty() ? View.VISIBLE : View.GONE);
-                
+
+                h.allergyBadge.setVisibility(
+                        p.getAllergy() != null && !p.getAllergy().trim().isEmpty()
+                                ? View.VISIBLE
+                                : View.GONE
+                );
+
                 int color = ContextCompat.getColor(h.itemView.getContext(), R.color.success);
-                if ("Cấp cứu".equalsIgnoreCase(p.getStatus())) color = ContextCompat.getColor(h.itemView.getContext(), R.color.danger);
-                else if ("Theo dõi".equalsIgnoreCase(p.getStatus())) color = ContextCompat.getColor(h.itemView.getContext(), R.color.warning);
+
+                if ("Cấp cứu".equalsIgnoreCase(p.getStatus())) {
+                    color = ContextCompat.getColor(h.itemView.getContext(), R.color.danger);
+                } else if ("Theo dõi".equalsIgnoreCase(p.getStatus())) {
+                    color = ContextCompat.getColor(h.itemView.getContext(), R.color.warning);
+                }
+
                 h.statusDot.setBackgroundTintList(android.content.res.ColorStateList.valueOf(color));
+                h.statusChip.setTextColor(color);
 
                 h.btnOptions.setOnClickListener(v -> listener.onOptionsClick(v, item));
             }
@@ -462,16 +602,20 @@ public class RecordFragment extends Fragment {
             }
         }
         static class PatientViewHolder extends RecyclerView.ViewHolder {
-            TextView name, bed, diag, age, initial, allergyBadge; View btnOptions, statusDot;
-            PatientViewHolder(View v) { super(v); 
-                name = v.findViewById(R.id.tvPatientName); 
-                bed = v.findViewById(R.id.tvBedNumber); 
+            TextView name, diag, bed, age, initial, allergyBadge, statusChip;
+            View btnOptions, statusDot;
+
+            PatientViewHolder(View v) {
+                super(v);
+                name = v.findViewById(R.id.tvPatientName);
                 diag = v.findViewById(R.id.tvDiagnosis);
+                bed = v.findViewById(R.id.tvBedNumber);
                 age = v.findViewById(R.id.tvAge);
                 initial = v.findViewById(R.id.tvPatientInitial);
                 allergyBadge = v.findViewById(R.id.tvAllergyBadge);
+                statusChip = v.findViewById(R.id.tvStatusChip);
                 statusDot = v.findViewById(R.id.viewStatusDot);
-                btnOptions = v.findViewById(R.id.btnOptions); 
+                btnOptions = v.findViewById(R.id.btnOptions);
             }
         }
     }
