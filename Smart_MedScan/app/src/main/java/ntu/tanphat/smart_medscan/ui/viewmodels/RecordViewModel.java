@@ -79,6 +79,104 @@ public class RecordViewModel extends ViewModel {
         return false;
     }
 
+    private int calculateMedicineScore(String rawText, Medicine medicine) {
+        if (medicine == null || medicine.getName() == null) return 0;
+
+        String scanText = normalizeText(rawText);
+        String medicineName = normalizeText(medicine.getName());
+
+        if (scanText.isEmpty() || medicineName.isEmpty()) return 0;
+
+        int score = 0;
+
+        // Trường hợp OCR đọc được gần đúng nguyên tên thuốc
+        if (scanText.contains(medicineName)) {
+            score += 100;
+        }
+
+        if (medicineName.contains(scanText)) {
+            score += 80;
+        }
+
+        // So từng từ trong tên thuốc
+        String[] nameWords = medicineName.split(" ");
+        for (String word : nameWords) {
+            if (word.length() >= 3 && scanText.contains(word)) {
+                score += 20;
+            }
+        }
+
+        // So thêm thành phần thuốc nếu OCR đọc được hoạt chất
+        if (medicine.getComponents() != null) {
+            String components = normalizeText(medicine.getComponents());
+            String[] componentWords = components.split("[,;\\s]+");
+
+            for (String word : componentWords) {
+                if (word.length() >= 4 && scanText.contains(word)) {
+                    score += 10;
+                }
+            }
+        }
+
+        // So thêm chỉ định nếu cần, nhưng điểm thấp hơn để tránh nhận sai
+        if (medicine.getIndications() != null) {
+            String indications = normalizeText(medicine.getIndications());
+            String[] indicationWords = indications.split("[,;\\s]+");
+
+            for (String word : indicationWords) {
+                if (word.length() >= 5 && scanText.contains(word)) {
+                    score += 3;
+                }
+            }
+        }
+
+        return score;
+    }
+
+    private String buildNotFoundMessage(String rawText) {
+        String shortText = rawText == null ? "" : rawText.trim();
+
+        if (shortText.length() > 80) {
+            shortText = shortText.substring(0, 80) + "...";
+        }
+
+        return "Không tìm thấy thuốc phù hợp từ nội dung quét: " + shortText;
+    }
+
+    public void scanMedicineFromText(String rawText) {
+        if (rawText == null || rawText.trim().isEmpty()) {
+            errorMessage.setValue("Chưa nhận diện được chữ trên hộp thuốc.");
+            return;
+        }
+
+        repository.getAllMedicines().addOnSuccessListener(snapshots -> {
+            Medicine bestMedicine = null;
+            int bestScore = 0;
+
+            for (QueryDocumentSnapshot doc : snapshots) {
+                Medicine medicine = doc.toObject(Medicine.class);
+                int score = calculateMedicineScore(rawText, medicine);
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMedicine = medicine;
+                }
+            }
+
+            // Ngưỡng này có thể chỉnh. 40 là khá ổn cho demo.
+            if (bestMedicine != null && bestScore >= 40) {
+                checkAllergy(bestMedicine);
+                scanResultLiveData.setValue(bestMedicine);
+            } else {
+                allergyWarningLiveData.setValue(null);
+                errorMessage.setValue(buildNotFoundMessage(rawText));
+            }
+
+        }).addOnFailureListener(e -> {
+            errorMessage.setValue("Lỗi khi tải danh sách thuốc: " + e.getMessage());
+        });
+    }
+
     public LiveData<List<Object>> getDisplayList() { return displayList; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<String> getErrorMessage() { return errorMessage; }
@@ -264,14 +362,25 @@ public class RecordViewModel extends ViewModel {
     }
 
     private void checkAllergy(Medicine medicine) {
-        if (currentPatient != null && currentPatient.getAllergy() != null) {
-            String patientAllergy = currentPatient.getAllergy().toLowerCase();
-            String medicineComponents = medicine.getComponents().toLowerCase();
-            
-            if (patientAllergy.contains(medicineComponents) || medicineComponents.contains(patientAllergy)) {
-                allergyWarningLiveData.setValue("CẢNH BÁO: Thuốc này chứa thành phần gây dị ứng cho bệnh nhân!");
-            } else {
-                allergyWarningLiveData.setValue(null);
+        allergyWarningLiveData.setValue(null);
+
+        if (currentPatient == null) return;
+        if (currentPatient.getAllergy() == null || currentPatient.getAllergy().trim().isEmpty()) return;
+        if (medicine == null || medicine.getComponents() == null) return;
+
+        String patientAllergy = normalizeText(currentPatient.getAllergy());
+        String medicineComponents = normalizeText(medicine.getComponents());
+
+        String[] allergyWords = patientAllergy.split("[,;\\n]+");
+
+        for (String allergy : allergyWords) {
+            allergy = allergy.trim();
+
+            if (allergy.length() >= 3 && medicineComponents.contains(allergy)) {
+                allergyWarningLiveData.setValue(
+                        "CẢNH BÁO: Bệnh nhân có tiền sử dị ứng với thành phần: " + allergy
+                );
+                return;
             }
         }
     }

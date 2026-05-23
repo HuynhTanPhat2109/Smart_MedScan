@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="22dp"
+    android:layout_marginHorizontal="18dp"
     android:layout_marginVertical="7dp"
     android:clickable="true"
     android:focusable="true"
@@ -22,33 +22,37 @@
         android:orientation="horizontal"
         android:padding="16dp">
 
-        <FrameLayout
-            android:layout_width="58dp"
-            android:layout_height="58dp">
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="62dp"
+            android:layout_height="62dp"
+            app:cardBackgroundColor="#EAF2FF"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp">
 
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                app:cardBackgroundColor="#EAF2FF"
-                app:cardCornerRadius="22dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp">
+                android:gravity="center"
+                android:orientation="vertical">
 
-                <ImageView
-                    android:layout_width="27dp"
-                    android:layout_height="27dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/timeicon"
-                    app:tint="#104DE0" />
-            </com.google.android.material.card.MaterialCardView>
+                <TextView
+                    android:id="@+id/tvScheduleTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="08:00"
+                    android:textColor="#104DE0"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
 
-            <View
-                android:layout_width="13dp"
-                android:layout_height="13dp"
-                android:layout_gravity="bottom|end"
-                android:layout_margin="2dp"
-                android:background="@drawable/bg_task_active_dot" />
-        </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hôm nay"
+                    android:textColor="#64748B"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -58,42 +62,43 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/tvTaskInfo"
+                android:id="@+id/tvScheduleTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="P.201 - Nguyễn Văn An"
+                android:text="Đo huyết áp"
                 android:textColor="#0F172A"
-                android:textSize="16sp"
+                android:textSize="17sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/tvTaskContent"
+                android:id="@+id/tvSchedulePatient"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="3dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Tiêm kháng sinh lúc 09:00"
+                android:text="Nguyễn Văn A • Phòng 201"
                 android:textColor="#64748B"
                 android:textSize="13sp" />
 
             <TextView
+                android:id="@+id/tvScheduleStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="9dp"
                 android:background="@drawable/bg_chip_blue"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp"
-                android:text="Ưu tiên"
+                android:text="Chờ thực hiện"
                 android:textColor="#104DE0"
                 android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/btnDone"
+            android:id="@+id/btnDoneSchedule"
             android:layout_width="46dp"
             android:layout_height="46dp"
             android:layout_marginStart="8dp"

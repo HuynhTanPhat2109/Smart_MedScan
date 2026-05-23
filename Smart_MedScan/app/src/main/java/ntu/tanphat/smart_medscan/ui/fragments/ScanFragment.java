@@ -20,6 +20,17 @@ import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.content.Intent;
+import android.net.Uri;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -42,6 +53,11 @@ public class ScanFragment extends Fragment {
     private TextView tvDetectedText;
     private RecordViewModel viewModel;
     private ExecutorService cameraExecutor;
+    private View btnBackScan;
+    private View scanLine;
+    private View btnChooseImage;
+    private View btnSelectPatient;
+    private ActivityResultLauncher<String[]> imagePickerLauncher;
     private boolean isProcessingResult = false;
 
     @Nullable
@@ -51,12 +67,22 @@ public class ScanFragment extends Fragment {
         
         previewView = view.findViewById(R.id.previewView);
         tvDetectedText = view.findViewById(R.id.tvDetectedText);
+        scanLine = view.findViewById(R.id.scanLine);
+        btnBackScan = view.findViewById(R.id.btnBackScan);
+        btnChooseImage = view.findViewById(R.id.btnChooseImage);
+        btnSelectPatient = view.findViewById(R.id.btnSelectPatient);
+
+        setupImagePicker();
+        setupScanActions();
+        startScanLineAnimation();
+
         
         // Quan trọng: Sử dụng requireActivity() để dùng chung ViewModel với RecordFragment
         viewModel = new ViewModelProvider(requireActivity()).get(RecordViewModel.class);
         cameraExecutor = Executors.newSingleThreadExecutor();
 
         observeViewModel();
+
 
         if (allPermissionsGranted()) {
             startCamera();
@@ -79,7 +105,8 @@ public class ScanFragment extends Fragment {
         viewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
             if (error != null && error.contains("Không tìm thấy") && isProcessingResult) {
                 Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
-                tvDetectedText.postDelayed(() -> isProcessingResult = false, 2000);
+                tvDetectedText.setText("Đưa tên thuốc vào khung quét để thử lại...");
+                tvDetectedText.postDelayed(() -> isProcessingResult = false, 1500);
             }
         });
     }
@@ -128,10 +155,9 @@ public class ScanFragment extends Fragment {
                 imageAnalysis.setAnalyzer(cameraExecutor, new MedicineAnalyzer(text -> {
                     if (isAdded() && !isProcessingResult) {
                         requireActivity().runOnUiThread(() -> {
-                            tvDetectedText.setText("Phát hiện: " + text);
-                            // Kích hoạt tìm kiếm thuốc
-                            isProcessingResult = true; 
-                            viewModel.checkMedicine(text);
+                            tvDetectedText.setText("Đang phân tích thuốc...\n" + text);
+                            isProcessingResult = true;
+                            viewModel.scanMedicineFromText(text);
                         });
                     }
                 }));
@@ -166,5 +192,88 @@ public class ScanFragment extends Fragment {
         if (cameraExecutor != null) {
             cameraExecutor.shutdown();
         }
+    }
+
+    private void setupScanActions() {
+        btnBackScan.setOnClickListener(v -> {
+            if (getActivity() instanceof ntu.tanphat.smart_medscan.ui.activities.MainActivity) {
+                ((ntu.tanphat.smart_medscan.ui.activities.MainActivity) getActivity())
+                        .selectBottomNavTab(R.id.nav_home);
+            }
+        });
+
+        btnChooseImage.setOnClickListener(v -> {
+            imagePickerLauncher.launch(new String[]{"image/*"});
+        });
+
+        btnSelectPatient.setOnClickListener(v -> {
+            Toast.makeText(
+                    getContext(),
+                    "Chọn bệnh nhân cần kiểm tra thuốc",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            if (getActivity() instanceof ntu.tanphat.smart_medscan.ui.activities.MainActivity) {
+                ((ntu.tanphat.smart_medscan.ui.activities.MainActivity) getActivity())
+                        .selectBottomNavTab(R.id.nav_records);
+            }
+        });
+    }
+
+    private void setupImagePicker() {
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.OpenDocument(),
+                uri -> {
+                    if (uri != null) {
+                        requireContext().getContentResolver().takePersistableUriPermission(
+                                uri,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        );
+
+                        analyzeImageFromGallery(uri);
+                    } else {
+                        Toast.makeText(getContext(), "Bạn chưa chọn ảnh", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+    }
+
+    private void analyzeImageFromGallery(Uri uri) {
+        try {
+            Toast.makeText(getContext(), "Đã chọn ảnh, đang phân tích...", Toast.LENGTH_SHORT).show();
+
+            InputImage image = InputImage.fromFilePath(requireContext(), uri);
+
+            TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                    .process(image)
+                    .addOnSuccessListener(visionText -> {
+                        String text = visionText.getText();
+
+                        if (text == null || text.trim().isEmpty()) {
+                            Toast.makeText(getContext(), "Không nhận diện được chữ trong ảnh", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        tvDetectedText.setText("Đang phân tích ảnh...\n" + text);
+                        isProcessingResult = true;
+                        viewModel.scanMedicineFromText(text);
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(getContext(), "Lỗi đọc ảnh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Không thể mở ảnh này", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void startScanLineAnimation() {
+        if (scanLine == null) return;
+
+        ObjectAnimator animator = ObjectAnimator.ofFloat(scanLine, "translationY", -165f, 165f);
+        animator.setDuration(1800);
+        animator.setRepeatCount(ValueAnimator.INFINITE);
+        animator.setRepeatMode(ValueAnimator.REVERSE);
+        animator.start();
     }
 }

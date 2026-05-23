@@ -18,6 +18,7 @@ import java.util.List;
 import ntu.tanphat.smart_medscan.R;
 import ntu.tanphat.smart_medscan.data.models.MedicalTask;
 import ntu.tanphat.smart_medscan.ui.adapters.TaskAdapter;
+import ntu.tanphat.smart_medscan.data.firebase.MedicineSeeder;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -51,6 +52,8 @@ public class HomeFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
+
+        new MedicineSeeder().seedMedicines();
 
         initViews(view);
         updateGreeting();

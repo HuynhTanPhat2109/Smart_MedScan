@@ -89,4 +89,9 @@ public class RecordRepository {
                 .limit(1)
                 .get();
     }
+    public Task<QuerySnapshot> getAllMedicines() {
+        return db.collection("medicines")
+                .orderBy("name")
+                .get();
+    }
 }

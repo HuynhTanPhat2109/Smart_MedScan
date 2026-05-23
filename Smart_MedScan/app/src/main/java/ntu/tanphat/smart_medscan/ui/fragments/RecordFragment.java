@@ -171,6 +171,7 @@ public class RecordFragment extends Fragment {
         TextView tvRoom = view.findViewById(R.id.tvDetailRoom);
         MaterialButton btnEdit = view.findViewById(R.id.btnEditPatientDetail);
         MaterialButton btnClose = view.findViewById(R.id.btnClosePatientDetail);
+        MaterialButton btnScanMedicine = view.findViewById(R.id.btnScanMedicineForPatient);
 
         String name = patient.getName() == null ? "Bệnh nhân" : patient.getName();
         String initial = !name.trim().isEmpty() ? name.trim().substring(0, 1).toUpperCase() : "P";
@@ -203,6 +204,22 @@ public class RecordFragment extends Fragment {
         });
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        btnScanMedicine.setOnClickListener(v -> {
+            viewModel.setCurrentPatient(patient);
+            dialog.dismiss();
+
+            Toast.makeText(
+                    getContext(),
+                    "Đã chọn " + patient.getName() + " để quét thuốc",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            if (getActivity() instanceof ntu.tanphat.smart_medscan.ui.activities.MainActivity) {
+                ((ntu.tanphat.smart_medscan.ui.activities.MainActivity) getActivity())
+                        .selectBottomNavTab(R.id.placeholder);
+            }
+        });
 
         dialog.show();
     }
