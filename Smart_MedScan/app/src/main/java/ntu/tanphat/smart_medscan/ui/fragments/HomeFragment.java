@@ -60,6 +60,8 @@ public class HomeFragment extends Fragment {
 
         setupQuickActions();
 
+        animateHomeViews(view);
+
         return view;
     }
     private void initViews(View view) {
@@ -128,6 +130,32 @@ public class HomeFragment extends Fragment {
     private void triggerTabChange(int menuId) {
         if (getActivity() instanceof ntu.tanphat.smart_medscan.ui.activities.MainActivity) {
             ((ntu.tanphat.smart_medscan.ui.activities.MainActivity) getActivity()).selectBottomNavTab(menuId);
+        }
+    }
+
+    private void animateHomeViews(View root) {
+        int[] viewIds = {
+                R.id.topHeader,
+                R.id.mainHeroCard,
+                R.id.searchCard,
+                R.id.actionGrid,
+                R.id.statsContainer,
+                R.id.taskHeader,
+                R.id.rvPriorityTasks
+        };
+
+        for (int i = 0; i < viewIds.length; i++) {
+            View v = root.findViewById(viewIds[i]);
+            if (v != null) {
+                v.setAlpha(0f);
+                v.setTranslationY(35f);
+                v.animate()
+                        .alpha(1f)
+                        .translationY(0f)
+                        .setDuration(450)
+                        .setStartDelay(i * 70L)
+                        .start();
+            }
         }
     }
 }

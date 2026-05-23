@@ -9,6 +9,8 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.text.Normalizer;
+import java.util.Locale;
 
 import ntu.tanphat.smart_medscan.data.models.Department;
 import ntu.tanphat.smart_medscan.data.models.Floor;
@@ -29,6 +31,52 @@ public class RecordViewModel extends ViewModel {
 
     public RecordViewModel() {
         repository = new RecordRepository();
+    }
+
+    private String normalizeText(String input) {
+        if (input == null) return "";
+
+        String text = input.trim().toLowerCase(Locale.ROOT);
+
+        text = Normalizer.normalize(text, Normalizer.Form.NFD);
+        text = text.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        text = text.replace("đ", "d");
+
+        text = text.replaceAll("\\s+", " ");
+
+        return text;
+    }
+
+    private boolean containsSearch(String source, String keyword) {
+        String normalizedSource = normalizeText(source);
+        String normalizedKeyword = normalizeText(keyword);
+
+        if (normalizedKeyword.isEmpty()) return true;
+
+        return normalizedSource.contains(normalizedKeyword);
+    }
+
+    private boolean matchDepartment(Department department, String keyword) {
+        return containsSearch(department.getName(), keyword);
+    }
+
+    private boolean matchFloor(Floor floor, String keyword) {
+        return containsSearch(floor.getName(), keyword);
+    }
+
+    private boolean matchRoom(Room room, String keyword) {
+        return containsSearch(room.getName(), keyword);
+    }
+
+    private boolean matchPatient(PatientRecord patient, String keyword) {
+        if (containsSearch(patient.getName(), keyword)) return true;
+        if (containsSearch(patient.getDiagnosis(), keyword)) return true;
+        if (containsSearch(patient.getBedNumber(), keyword)) return true;
+        if (containsSearch(patient.getAge(), keyword)) return true;
+        if (containsSearch(patient.getAllergy(), keyword)) return true;
+        if (containsSearch(patient.getStatus(), keyword)) return true;
+
+        return false;
     }
 
     public LiveData<List<Object>> getDisplayList() { return displayList; }
@@ -111,13 +159,19 @@ public class RecordViewModel extends ViewModel {
 
     public void searchDepartments(String text) {
         isLoading.setValue(true);
+
         repository.searchDepartments(text).addOnSuccessListener(snapshots -> {
             List<Object> list = new ArrayList<>();
+
             for (QueryDocumentSnapshot doc : snapshots) {
                 Department dept = doc.toObject(Department.class);
                 dept.setId(doc.getId());
-                list.add(dept);
+
+                if (matchDepartment(dept, text)) {
+                    list.add(dept);
+                }
             }
+
             displayList.setValue(list);
             isLoading.setValue(false);
         }).addOnFailureListener(e -> {
@@ -128,13 +182,19 @@ public class RecordViewModel extends ViewModel {
 
     public void searchFloors(String text, String deptId) {
         isLoading.setValue(true);
+
         repository.searchFloors(text, deptId).addOnSuccessListener(snapshots -> {
             List<Object> list = new ArrayList<>();
+
             for (QueryDocumentSnapshot doc : snapshots) {
                 Floor floor = doc.toObject(Floor.class);
                 floor.setId(doc.getId());
-                list.add(floor);
+
+                if (matchFloor(floor, text)) {
+                    list.add(floor);
+                }
             }
+
             displayList.setValue(list);
             isLoading.setValue(false);
         }).addOnFailureListener(e -> {
@@ -145,13 +205,19 @@ public class RecordViewModel extends ViewModel {
 
     public void searchRooms(String text, String floorId) {
         isLoading.setValue(true);
+
         repository.searchRooms(text, floorId).addOnSuccessListener(snapshots -> {
             List<Object> list = new ArrayList<>();
+
             for (QueryDocumentSnapshot doc : snapshots) {
                 Room room = doc.toObject(Room.class);
                 room.setId(doc.getId());
-                list.add(room);
+
+                if (matchRoom(room, text)) {
+                    list.add(room);
+                }
             }
+
             displayList.setValue(list);
             isLoading.setValue(false);
         }).addOnFailureListener(e -> {
@@ -162,13 +228,19 @@ public class RecordViewModel extends ViewModel {
 
     public void searchPatients(String text, String roomId, String status) {
         isLoading.setValue(true);
+
         repository.searchPatients(text, roomId, status).addOnSuccessListener(snapshots -> {
             List<Object> list = new ArrayList<>();
+
             for (QueryDocumentSnapshot doc : snapshots) {
-                PatientRecord p = doc.toObject(PatientRecord.class);
-                p.setPatientId(doc.getId());
-                list.add(p);
+                PatientRecord patient = doc.toObject(PatientRecord.class);
+                patient.setPatientId(doc.getId());
+
+                if (matchPatient(patient, text)) {
+                    list.add(patient);
+                }
             }
+
             displayList.setValue(list);
             isLoading.setValue(false);
         }).addOnFailureListener(e -> {

@@ -17,15 +17,24 @@ public class RecordRepository {
     }
 
     public Task<QuerySnapshot> getFloors(String departmentId) {
-        return db.collection("floors").whereEqualTo("departmentId", departmentId).orderBy("name").get();
+        return db.collection("floors")
+                .whereEqualTo("departmentId", departmentId)
+                .orderBy("name")
+                .get();
     }
 
     public Task<QuerySnapshot> getRooms(String floorId) {
-        return db.collection("rooms").whereEqualTo("floorId", floorId).orderBy("name").get();
+        return db.collection("rooms")
+                .whereEqualTo("floorId", floorId)
+                .orderBy("name")
+                .get();
     }
 
     public Task<QuerySnapshot> getPatients(String roomId) {
-        return db.collection("patients").whereEqualTo("roomId", roomId).orderBy("name").get();
+        return db.collection("patients")
+                .whereEqualTo("roomId", roomId)
+                .orderBy("name")
+                .get();
     }
 
     public Task<DocumentReference> addRecord(String collection, Map<String, Object> data) {
@@ -42,50 +51,42 @@ public class RecordRepository {
 
     public void updateDeptCount(String deptId, int change) {
         if (deptId == null) return;
-        db.collection("departments").document(deptId).update("count", FieldValue.increment(change));
+        db.collection("departments")
+                .document(deptId)
+                .update("count", FieldValue.increment(change));
     }
 
+
     public Task<QuerySnapshot> searchDepartments(String searchText) {
-        return db.collection("departments")
-                .orderBy("name")
-                .startAt(searchText)
-                .endAt(searchText + "\uf8ff")
-                .get();
+        return getDepartments();
     }
 
     public Task<QuerySnapshot> searchFloors(String searchText, String deptId) {
-        return db.collection("floors")
-                .whereEqualTo("departmentId", deptId)
-                .orderBy("name")
-                .startAt(searchText)
-                .endAt(searchText + "\uf8ff")
-                .get();
+        return getFloors(deptId);
     }
 
     public Task<QuerySnapshot> searchRooms(String searchText, String floorId) {
-        return db.collection("rooms")
-                .whereEqualTo("floorId", floorId)
-                .orderBy("name")
-                .startAt(searchText)
-                .endAt(searchText + "\uf8ff")
-                .get();
+        return getRooms(floorId);
     }
 
     public Task<QuerySnapshot> searchPatients(String searchText, String roomId, String status) {
         Query query = db.collection("patients");
+
         if (roomId != null) {
             query = query.whereEqualTo("roomId", roomId);
         }
+
         if (status != null && !status.equals("Tất cả")) {
             query = query.whereEqualTo("status", status);
         }
-        return query.orderBy("name")
-                .startAt(searchText)
-                .endAt(searchText + "\uf8ff")
-                .get();
+
+        return query.orderBy("name").get();
     }
 
     public Task<QuerySnapshot> getMedicineByName(String name) {
-        return db.collection("medicines").whereEqualTo("name", name).limit(1).get();
+        return db.collection("medicines")
+                .whereEqualTo("name", name)
+                .limit(1)
+                .get();
     }
 }
