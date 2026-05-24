@@ -330,21 +330,21 @@ public class RecordFragment extends Fragment {
 
             case FLOORS:
                 tvRecordStateLabel.setText("Đang xem tầng");
-                tvTotalRecordLabel.setText("tầng trong khoa");
+                tvTotalRecordLabel.setText("tầng");
                 tvCurrentLocation.setText(selectedDeptName == null ? "Khoa" : selectedDeptName);
                 tvCurrentLocationSub.setText("Chọn tầng để xem phòng");
                 break;
 
             case ROOMS:
                 tvRecordStateLabel.setText("Đang xem phòng");
-                tvTotalRecordLabel.setText("phòng trong tầng");
+                tvTotalRecordLabel.setText("phòng");
                 tvCurrentLocation.setText(selectedFloorName == null ? "Tầng" : selectedFloorName);
                 tvCurrentLocationSub.setText(selectedDeptName == null ? "Chọn phòng để xem bệnh nhân" : selectedDeptName);
                 break;
 
             case PATIENTS:
                 tvRecordStateLabel.setText("Đang xem bệnh nhân");
-                tvTotalRecordLabel.setText("bệnh nhân trong phòng");
+                tvTotalRecordLabel.setText("bệnh nhân");
                 tvCurrentLocation.setText(selectedRoomName == null ? "Phòng" : selectedRoomName);
                 tvCurrentLocationSub.setText("Lọc theo trạng thái bệnh án");
                 break;

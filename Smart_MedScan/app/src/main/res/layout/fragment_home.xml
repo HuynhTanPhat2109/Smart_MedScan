@@ -675,7 +675,7 @@
                         android:background="@drawable/bg_header_badge"
                         android:paddingHorizontal="10dp"
                         android:paddingVertical="5dp"
-                        android:text="Tác vụ"
+                        android:text="Lịch chờ"
                         android:textColor="@color/white"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -707,7 +707,7 @@
                 android:id="@+id/tvSectionTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tác vụ ưu tiên"
+                android:text="Lịch chăm sóc"
                 android:textColor="#0F172A"
                 android:textSize="18sp"
                 android:textStyle="bold" />
