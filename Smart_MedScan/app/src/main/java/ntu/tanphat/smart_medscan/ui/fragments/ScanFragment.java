@@ -59,6 +59,7 @@ public class ScanFragment extends Fragment {
     private View btnSelectPatient;
     private ActivityResultLauncher<String[]> imagePickerLauncher;
     private boolean isProcessingResult = false;
+    private boolean isNavigatingToRecords = false;
 
     @Nullable
     @Override
@@ -102,8 +103,8 @@ public class ScanFragment extends Fragment {
         });
 
         // Nhận thông báo lỗi (không tìm thấy thuốc)
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
-            if (error != null && error.contains("Không tìm thấy") && isProcessingResult) {
+        viewModel.getScanErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && isProcessingResult) {
                 Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
                 tvDetectedText.setText("Đưa tên thuốc vào khung quét để thử lại...");
                 tvDetectedText.postDelayed(() -> isProcessingResult = false, 1500);
@@ -153,7 +154,7 @@ public class ScanFragment extends Fragment {
                         .build();
 
                 imageAnalysis.setAnalyzer(cameraExecutor, new MedicineAnalyzer(text -> {
-                    if (isAdded() && !isProcessingResult) {
+                    if (isAdded() && !isProcessingResult && !isNavigatingToRecords) {
                         requireActivity().runOnUiThread(() -> {
                             tvDetectedText.setText("Đang phân tích thuốc...\n" + text);
                             isProcessingResult = true;
@@ -189,6 +190,13 @@ public class ScanFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+        try {
+            ProcessCameraProvider cameraProvider = ProcessCameraProvider.getInstance(requireContext()).get();
+            cameraProvider.unbindAll();
+        } catch (Exception ignored) {
+        }
+
         if (cameraExecutor != null) {
             cameraExecutor.shutdown();
         }
@@ -207,6 +215,9 @@ public class ScanFragment extends Fragment {
         });
 
         btnSelectPatient.setOnClickListener(v -> {
+            isNavigatingToRecords = true;
+            isProcessingResult = false;
+
             Toast.makeText(
                     getContext(),
                     "Chọn bệnh nhân cần kiểm tra thuốc",

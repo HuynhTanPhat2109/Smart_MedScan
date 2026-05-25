@@ -24,6 +24,7 @@ public class RecordViewModel extends ViewModel {
     private final MutableLiveData<List<Object>> displayList = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
+    private final MutableLiveData<String> scanErrorMessage = new MutableLiveData<>();
     private final MutableLiveData<Medicine> scanResultLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> allergyWarningLiveData = new MutableLiveData<>();
     
@@ -145,7 +146,7 @@ public class RecordViewModel extends ViewModel {
 
     public void scanMedicineFromText(String rawText) {
         if (rawText == null || rawText.trim().isEmpty()) {
-            errorMessage.setValue("Chưa nhận diện được chữ trên hộp thuốc.");
+            scanErrorMessage.setValue("Chưa nhận diện được chữ trên hộp thuốc.");
             return;
         }
 
@@ -169,17 +170,18 @@ public class RecordViewModel extends ViewModel {
                 scanResultLiveData.setValue(bestMedicine);
             } else {
                 allergyWarningLiveData.setValue(null);
-                errorMessage.setValue(buildNotFoundMessage(rawText));
+                scanErrorMessage.setValue(buildNotFoundMessage(rawText));
             }
 
         }).addOnFailureListener(e -> {
-            errorMessage.setValue("Lỗi khi tải danh sách thuốc: " + e.getMessage());
+            scanErrorMessage.setValue("Lỗi khi tải danh sách thuốc: " + e.getMessage());
         });
     }
 
     public LiveData<List<Object>> getDisplayList() { return displayList; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<String> getErrorMessage() { return errorMessage; }
+    public LiveData<String> getScanErrorMessage() { return scanErrorMessage; }
     public LiveData<Medicine> getScanResultLiveData() { return scanResultLiveData; }
     public LiveData<String> getAllergyWarningLiveData() { return allergyWarningLiveData; }
 
@@ -356,7 +358,7 @@ public class RecordViewModel extends ViewModel {
                     checkAllergy(medicine);
                 }
             } else {
-                errorMessage.setValue("Không tìm thấy thông tin thuốc: " + medicineName);
+                scanErrorMessage.setValue("Không tìm thấy thông tin thuốc: " + medicineName);
             }
         });
     }
