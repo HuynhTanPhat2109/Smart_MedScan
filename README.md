@@ -24,7 +24,7 @@
 
 Video demo trình bày các chức năng chính của Smart MedScan: đăng nhập, trang chủ, quản lý bệnh án, quét thuốc bằng OCR, lịch chăm sóc và trang cá nhân.
 
-[▶ Xem video demo Smart MedScan](https://drive.google.com/file/d/1qQsWvpjcNmGglMOGx8hvsLbEWo_eW3aG/view?usp=sharing)
+[▶ Xem video demo Smart MedScan](https://drive.google.com/file/d/15WQtVYcUtZNAOxzgbLZnrSfDS11YDtE-/view?usp=sharing)
 
 ## 4. Kết quả giao diện ứng dụng
 
